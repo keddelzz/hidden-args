@@ -3,6 +3,8 @@
 
 # Hidden Arguments
 
+## Description
+
 A common pattern during development of tail-recursive functions is to
 introduce a helper function to hide the accumulator parameter.
 
@@ -44,3 +46,7 @@ the annotation 'hiddenargs'. Every parameter of such function, which
 is marked with the 'hidden' annotation, will be hidden using a nested
 function. The default value of the hidden paramter is used to call the
 nested function.
+
+## License
+
+See the [LICENSE](LICENSE) file for license rights and limitations (MIT).
