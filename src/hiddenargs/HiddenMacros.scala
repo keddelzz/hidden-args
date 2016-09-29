@@ -103,7 +103,7 @@ private[hiddenargs] class HiddenMacros(val c: Context) {
     }
 
     if (!hasHiddenParameters) {
-      c.warning(c.enclosingPosition, s"Annotation 'privateargs' was used but no parameter was marked as private using the annotation 'hidden'!")
+      c.warning(c.enclosingPosition, s"Annotation 'hiddenargs' was used but no parameter was marked as private using the annotation 'hidden'!")
     }
 
     (parameters, hasHiddenParameters)
@@ -159,7 +159,7 @@ private[hiddenargs] class HiddenMacros(val c: Context) {
         }
 
       case t =>
-        c.error(c.enclosingPosition, "Unsupported usage of annotation 'privateargs'!")
+        c.error(c.enclosingPosition, "Unsupported usage of annotation 'hiddenargs'!")
         t
     }
 
