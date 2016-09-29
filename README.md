@@ -60,8 +60,6 @@ To build the project:
   - `sbt packageBin` to publish the project locally
   - `sbt test` to run the unit tests
 
-To build the project run the following command in the re
-
 ## License
 
 See the [LICENSE](LICENSE) file for license rights and limitations (MIT).
