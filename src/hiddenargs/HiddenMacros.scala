@@ -78,8 +78,8 @@ private[hiddenargs] class HiddenMacros(val c: Context) {
           }
 
           /*
-           * Parse default value of hidden parameters and parameters
-           * to inner function.
+           * Pass default value of hidden parameters and
+           * propagate other parameters to inner function.
            */
           val args = parameters map {
             case Hidden(_, _, _, default) => default
