@@ -47,6 +47,21 @@ is marked with the 'hidden' annotation, will be hidden using a nested
 function. The default value of the hidden paramter is used to call the
 nested function.
 
+## Building the project
+
+This project is built using [sbt](http://www.scala-sbt.org/).
+
+To build the project:
+- Install [sbt](http://www.scala-sbt.org/)
+- Clone this project
+- Open a terminal and `cd` into the root directory of the cloned repository
+- Run
+  - `sbt compile` to build the project
+  - `sbt packageBin` to publish the project locally
+  - `sbt test` to run the unit tests
+
+To build the project run the following command in the re
+
 ## License
 
 See the [LICENSE](LICENSE) file for license rights and limitations (MIT).
