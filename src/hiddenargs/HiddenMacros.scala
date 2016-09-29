@@ -1,17 +1,17 @@
-package privateargs
+package hiddenargs
 
 import scala.reflect.macros.whitebox.Context
 import scala.collection.mutable.ListBuffer
 import java.io.Serializable
 
-private[privateargs] class HiddenMacros(val c: Context) {
+private[hiddenargs] class HiddenMacros(val c: Context) {
   import c.universe._
 
   private def replaceCall(body: Tree, orig: TermName, replacement: TermName): Tree = {
     body
   }
 
-  private val hiddenTpe = typeOf[privateargs.hidden]
+  private val hiddenTpe = typeOf[hiddenargs.hidden]
 
   private sealed trait Param extends Product with Serializable
   private case class Normal(param: Tree, name: TermName) extends Param

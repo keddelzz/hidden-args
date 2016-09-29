@@ -1,4 +1,4 @@
-package privateargs
+package hiddenargs
 
 import scala.annotation.StaticAnnotation
 
