@@ -43,6 +43,14 @@ class HiddenArgsSpec extends FlatSpec with Matchers {
     """, "Hidden function parameter 'acc' needs a default value!")
   }
 
+  "Hidden arguments" should "not be implicit" in {
+    illTyped("""
+      @hiddenargs
+      def foobar(implicit @hidden acc: BigInt = BigInt(0)): BigInt =
+        acc
+    """, "Hidden function parameter 'acc' can't be implicit!")
+  }
+
   "Hidden arguments" should "support usage of implicit parameters" in {
     @hiddenargs
     def sum[T](xs: List[T], @hidden acc: T = ev.zero)(implicit ev: Numeric[T]): T =
