@@ -85,26 +85,26 @@ private[hiddenargs] class HiddenMacros(val c: Context) {
     case _                      => false
   }
 
-  private def paramInfos(plists: List[List[Tree]]): (List[List[Param]], Boolean) = {
+  private def paramInfos(fundef: Tree, plists: List[List[Tree]]): (List[List[Param]], Boolean) = {
     val paramLists = plists map {
       _ map {
         case t @ q"$mods val $name: $tpe = $default" if isHiddenParameter(mods) =>
           if (default.isEmpty) {
             val paramName = name.decodedName.toString
-            c.error(c.enclosingPosition, s"Hidden function parameter '$paramName' needs a default value!")
+            c.error(t.pos, s"Hidden function parameter '$paramName' needs a default value!")
             Normal(t, name)
           } else if (mods.hasFlag(Flag.IMPLICIT)) {
             val paramName = name.decodedName.toString
-            c.error(c.enclosingPosition, s"Hidden function parameter '$paramName' can't be implicit!")
+            c.error(t.pos, s"Hidden function parameter '$paramName' can't be implicit!")
             Normal(t, name)
           } else {
             val newMods = transformMods(mods)
             Hidden(newMods, name, tpe, default)
           }
-        case t @ q"$mods val $name: $tpe" =>
+        case t @ q"$mods val $name: $tpe = $default" =>
           Normal(t, name)
         case p =>
-          c.abort(c.enclosingPosition, "Unsupported shape of parameter!")
+          c.abort(p.pos, "Unsupported shape of parameter!")
       }
     }
 
@@ -116,7 +116,7 @@ private[hiddenargs] class HiddenMacros(val c: Context) {
     }
 
     if (!hasHiddenParameters) {
-      c.warning(c.enclosingPosition, s"Annotation 'hiddenargs' was used but no parameter was marked as private using the annotation 'hidden'!")
+      c.warning(fundef.pos, s"Annotation 'hiddenargs' was used but no parameter was marked as private using the annotation 'hidden'!")
     }
 
     (paramLists, hasHiddenParameters)
@@ -129,7 +129,7 @@ private[hiddenargs] class HiddenMacros(val c: Context) {
                              retTy: Tree,
                              funBody: Tree): Tree = {
 
-    val (paramLists, shouldTransform) = paramInfos(params)
+    val (paramLists, shouldTransform) = paramInfos(tree, params)
 
     if (shouldTransform) {
       val funImplName = TermName(funName.decodedName.toString() + "_impl")
@@ -187,7 +187,7 @@ private[hiddenargs] class HiddenMacros(val c: Context) {
         """ =>
         changeFunction(tree, funName, ptys, params, retTy, funBody)
       case t =>
-        c.error(c.enclosingPosition, "Unsupported usage of annotation 'hiddenargs'!")
+        c.error(t.pos, "Unsupported usage of annotation 'hiddenargs'!")
         t
     }
 

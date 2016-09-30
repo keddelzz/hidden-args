@@ -17,6 +17,7 @@ project/boot/
 ### Eclipse ###
 
 .cache-main
+.cache-tests
 .metadata
 bin/
 tmp/
