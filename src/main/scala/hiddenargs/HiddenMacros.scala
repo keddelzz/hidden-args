@@ -63,21 +63,21 @@ private[hiddenargs] class HiddenMacros(val c: Context) {
     Modifiers(
       flags,
       mods.privateWithin,
-      mods.annotations filterNot hiddenAnnotation)
+      mods.annotations filterNot (isAnnotation[HiddenAnnot](_)))
   }
 
-  private val hiddenTpe = typeOf[hiddenargs.hidden]
+  private type HiddenAnnot = hiddenargs.hidden
 
   private sealed trait Param extends Product with Serializable
   private case class Normal(param: Tree, name: TermName) extends Param
   private case class Hidden(mods: Modifiers, name: TermName, tpe: Tree, default: Tree) extends Param
 
-  private def isHiddenParameter(mods: Modifiers): Boolean =
-    mods.annotations exists hiddenAnnotation
+  private def hasAnnotation[T](mods: Modifiers)(implicit tag: c.TypeTag[T]): Boolean =
+    mods.annotations exists (isAnnotation[T](_))
 
-  private def hiddenAnnotation(annot: Tree): Boolean = {
+  private def isAnnotation[T](annot: Tree)(implicit tag: c.TypeTag[T]): Boolean = {
     val typedAnnot = c.typecheck(annot, silent = true)
-    typedAnnot.nonEmpty && typedAnnot.tpe =:= hiddenTpe
+    typedAnnot.nonEmpty && typedAnnot.tpe =:= tag.tpe
   }
 
   private def isImplicitParameter(param: Tree): Boolean = param match {
@@ -88,7 +88,7 @@ private[hiddenargs] class HiddenMacros(val c: Context) {
   private def paramInfos(fundef: Tree, plists: List[List[Tree]]): (List[List[Param]], Boolean) = {
     val paramLists = plists map {
       _ map {
-        case t @ q"$mods val $name: $tpe = $default" if isHiddenParameter(mods) =>
+        case t @ q"$mods val $name: $tpe = $default" if hasAnnotation[HiddenAnnot](mods) =>
           if (default.isEmpty) {
             val paramName = name.decodedName.toString
             c.error(t.pos, s"Hidden function parameter '$paramName' needs a default value!")
