@@ -16,8 +16,21 @@ lazy val settings = Seq(
 )
 
 /*
+ * ==================================== tasks =====================================
+ */
+
+addCommandAlias("testAll", ";test;examples/test")
+
+/*
  * =================================== projects ===================================
  */
 
 lazy val hiddenargs = (project in file("."))
   .settings(settings :_*)
+
+lazy val examples = (project in file("examples"))
+  .settings(settings :_*)
+  .settings(
+    name := "hidden-args-examples"
+  )
+  .dependsOn(hiddenargs) 

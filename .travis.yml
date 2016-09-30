@@ -4,4 +4,4 @@ sudo: false
 scala:
   - 2.11.8
 script:
-  - sbt clean compile test
+  - sbt clean compile testAll
