@@ -43,4 +43,18 @@ class HiddenArgsSpec extends FlatSpec with Matchers {
     """, "Hidden function parameter 'acc' needs a default value!")
   }
 
+  "Hidden arguments" should "support usage of implicit parameters" in {
+    @hiddenargs
+    def sum[T](xs: List[T], @hidden acc: T = ev.zero)(implicit ev: Numeric[T]): T =
+      xs match {
+        case Nil      => acc
+        case hd :: tl => sum(tl, ev.plus(hd, acc))
+      }
+
+    sum(List[Byte](1, 2, 3))  should be (6.toByte)
+    sum(List[Short](1, 2, 3)) should be (6.toShort)
+    sum(List[Int](1, 2, 3))   should be (6)
+    sum(List[Long](1, 2, 3))  should be (6L)
+  }
+
 }
