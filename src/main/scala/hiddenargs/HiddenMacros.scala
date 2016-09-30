@@ -80,84 +80,112 @@ private[hiddenargs] class HiddenMacros(val c: Context) {
     typedAnnot.nonEmpty && typedAnnot.tpe =:= hiddenTpe
   }
 
-  private def paramInfos(params: List[Tree]): (List[Param], Boolean) = {
-    val parameters = params map {
-      case t @ q"$mods val $name: $tpe = $default" if isHiddenParameter(mods) =>
-        if (default.isEmpty) {
-          val paramName = name.decodedName.toString
-          c.error(c.enclosingPosition, s"Hidden function parameter '$paramName' needs a default value!")
+  private def isImplicitParameter(param: Tree): Boolean = param match {
+    case q"$mods val $_ : $tpe" => mods hasFlag Flag.IMPLICIT
+    case _                      => false
+  }
+
+  private def paramInfos(plists: List[List[Tree]]): (List[List[Param]], Boolean) = {
+    val paramLists = plists map {
+      _ map {
+        case t @ q"$mods val $name: $tpe = $default" if isHiddenParameter(mods) =>
+          if (default.isEmpty) {
+            val paramName = name.decodedName.toString
+            c.error(c.enclosingPosition, s"Hidden function parameter '$paramName' needs a default value!")
+            Normal(t, name)
+          } else if (mods.hasFlag(Flag.IMPLICIT)) {
+            val paramName = name.decodedName.toString
+            c.error(c.enclosingPosition, s"Hidden function parameter '$paramName' can't be implicit!")
+            Normal(t, name)
+          } else {
+            val newMods = transformMods(mods)
+            Hidden(newMods, name, tpe, default)
+          }
+        case t @ q"$mods val $name: $tpe" =>
           Normal(t, name)
-        } else {
-          val newMods = transformMods(mods)
-          Hidden(newMods, name, tpe, default)
-        }
-      case t @ q"$mods val $name: $tpe" =>
-        Normal(t, name)
-      case _ =>
-        c.abort(c.enclosingPosition, "Unsupported shape of parameter!")
+        case p =>
+          c.abort(c.enclosingPosition, "Unsupported shape of parameter!")
+      }
     }
 
-    val hasHiddenParameters = parameters exists {
-      case _: Hidden => true
-      case _: Normal => false
+    val hasHiddenParameters = paramLists exists {
+      _ exists {
+        case _: Hidden => true
+        case _: Normal => false
+      }
     }
 
     if (!hasHiddenParameters) {
       c.warning(c.enclosingPosition, s"Annotation 'hiddenargs' was used but no parameter was marked as private using the annotation 'hidden'!")
     }
 
-    (parameters, hasHiddenParameters)
+    (paramLists, hasHiddenParameters)
+  }
+
+  private def changeFunction(tree: Tree,
+                             funName: TermName,
+                             ptys: List[TypeDef],
+                             params: List[List[ValDef]],
+                             retTy: Tree,
+                             funBody: Tree): Tree = {
+
+    val (paramLists, shouldTransform) = paramInfos(params)
+
+    if (shouldTransform) {
+      val funImplName = TermName(funName.decodedName.toString() + "_impl")
+      val newBody = replaceCall(funBody, funName, funImplName)
+
+      /*
+       * Drop default arguments, which were marked
+       * with 'hidden'.
+       */
+      val outerParamLists = paramLists map {
+        _ collect {
+          case Normal(p, _) => p
+        }
+      }
+
+      /*
+       * Drop default value and 'hidden' annotation
+       * in the parameter-list of the inner function.
+       */
+      val innerParamLists = paramLists map {
+        _ map {
+          case Hidden(mods, name, tpe, default) =>
+            q"$mods val $name: $tpe = $EmptyTree"
+          case Normal(p, _) => p
+        }
+      }
+
+      /*
+       * Pass default value of hidden parameters and
+       * propagate other parameters to inner function.
+       */
+      val args = paramLists map {
+        _ collect {
+          case Hidden(_, _, _, default)                   => default
+          case Normal(p, name) if !isImplicitParameter(p) => q"$name"
+        }
+      } filterNot (_.isEmpty)
+
+      q"""
+      def $funName[..$ptys](...$outerParamLists): $retTy = {
+        def $funImplName(...$innerParamLists): $retTy = $newBody
+
+        $funImplName(...$args)
+      }
+      """
+    } else {
+      tree
+    }
   }
 
   def transform(annottees: Tree*): Tree = {
     val res = annottees map {
       case tree @ q"""
-        def $funName[..$ptys](..$params): $retTy = $funBody
+        def $funName[..$ptys](...$params): $retTy = $funBody
         """ =>
-        val (parameters, shouldTransform) = paramInfos(params)
-
-        if (shouldTransform) {
-          val funImplName = TermName(funName.decodedName.toString() + "_impl")
-          val newBody = replaceCall(funBody, funName, funImplName)
-
-          /*
-           * Drop default arguments, which were marked
-           * with 'hidden'.
-           */
-          val outerParams = parameters collect {
-            case Normal(p, _) => p
-          }
-
-          /*
-           * Drop default value and 'hidden' annotation
-           * in the parameter-list of the inner function.
-           */
-          val innerParams = parameters map {
-            case Hidden(mods, name, tpe, _) =>
-              q"$mods val $name: $tpe = $EmptyTree"
-            case Normal(p, _) => p
-          }
-
-          /*
-           * Pass default value of hidden parameters and
-           * propagate other parameters to inner function.
-           */
-          val args = parameters map {
-            case Hidden(_, _, _, default) => default
-            case Normal(_, name)          => q"$name"
-          }
-
-          q"""
-          def $funName[..$ptys](..$outerParams): $retTy = {
-            def $funImplName(..$innerParams): $retTy = $newBody
-
-            $funImplName(..$args)
-          }
-          """
-        } else {
-          tree
-        }
-
+        changeFunction(tree, funName, ptys, params, retTy, funBody)
       case t =>
         c.error(c.enclosingPosition, "Unsupported usage of annotation 'hiddenargs'!")
         t
