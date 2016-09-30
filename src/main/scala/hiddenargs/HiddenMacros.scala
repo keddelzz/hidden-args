@@ -168,14 +168,13 @@ private[hiddenargs] class HiddenMacros(val c: Context) {
         }
       } filterNot (_.isEmpty)
 
-      val res = q"""
+      q"""
       def $funName[..$ptys](...$outerParamLists): $retTy = {
         def $funImplName(...$innerParamLists): $retTy = $newBody
 
         $funImplName(...$args)
       }
       """
-      res
     } else {
       tree
     }
