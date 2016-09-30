@@ -77,4 +77,31 @@ class HiddenArgsSpec extends FlatSpec with Matchers {
     sum2(List[Long](1, 2, 3))  should be (6L)
   }
 
+  "Annotations of functions with 'hiddenargs'" should "be moved to the nested function" in {
+    /*
+     * @tailrec
+     * @hiddenargs
+     * def factorial5(n: Int, @hidden acc: Int = 5): Int =
+     *   if (n <= 0) 1
+     *   else n * factorial5(n - 1, acc)
+     *
+     * I'm not sure how to test this, however the function above expands to
+     *
+     * def factorial5(n: Int): Int = {
+     *   @new tailrec()
+     *   def factorial5_impl(n: Int, acc: Int): Int =
+     *     if (n.$less$eq(0))
+     *       1
+     *     else
+     *       n.$times(factorial5_impl(n.$minus(1), acc));
+     *
+     *    factorial5_impl(n, 5)
+     *  }
+     *
+     *  This causes a compile error, because `factorial5_impl` is not
+     *  tail-recursive, this shows that the feature of moving annotations
+     *  works correctly.
+     */
+  }
+
 }
