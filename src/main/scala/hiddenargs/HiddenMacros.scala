@@ -101,7 +101,7 @@ private[hiddenargs] class HiddenMacros(val c: Context) {
             val newMods = transformMods(mods)
             Hidden(newMods, name, tpe, default)
           }
-        case t @ q"$mods val $name: $tpe" =>
+        case t @ q"$mods val $name: $tpe = $default" =>
           Normal(t, name)
         case p =>
           c.abort(c.enclosingPosition, "Unsupported shape of parameter!")
