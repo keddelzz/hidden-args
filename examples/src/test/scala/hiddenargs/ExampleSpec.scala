@@ -8,4 +8,16 @@ class ExampleSpec extends FlatSpec with Matchers {
     new factorial()
   }
 
+  "The example 'sum'" should "be valid" in {
+    new sum()
+  }
+
+  "The example 'genericsum'" should "be valid" in {
+    new genericsum()
+  }
+
+  "The example 'count'" should "be valid" in {
+    new count()
+  }
+
 }
