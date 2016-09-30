@@ -63,7 +63,7 @@ private[hiddenargs] class HiddenMacros(val c: Context) {
     Modifiers(
       flags,
       mods.privateWithin,
-      mods.annotations filterNot (isAnnotation[HiddenAnnot](_)))
+      mods.annotations filterNot (isAnnotation[HiddenAnnot]))
   }
 
   private type HiddenAnnot = hiddenargs.hidden
@@ -73,7 +73,7 @@ private[hiddenargs] class HiddenMacros(val c: Context) {
   private case class Hidden(mods: Modifiers, name: TermName, tpe: Tree, default: Tree) extends Param
 
   private def hasAnnotation[T](mods: Modifiers)(implicit tag: c.TypeTag[T]): Boolean =
-    mods.annotations exists (isAnnotation[T](_))
+    mods.annotations exists (isAnnotation[T])
 
   private def isAnnotation[T](annot: Tree)(implicit tag: c.TypeTag[T]): Boolean = {
     val typedAnnot = c.typecheck(annot, silent = true)
@@ -123,6 +123,7 @@ private[hiddenargs] class HiddenMacros(val c: Context) {
   }
 
   private def changeFunction(tree: Tree,
+                             mods: Modifiers,
                              funName: TermName,
                              ptys: List[TypeDef],
                              params: List[List[ValDef]],
@@ -170,7 +171,7 @@ private[hiddenargs] class HiddenMacros(val c: Context) {
 
       q"""
       def $funName[..$ptys](...$outerParamLists): $retTy = {
-        def $funImplName(...$innerParamLists): $retTy = $newBody
+        $mods def $funImplName(...$innerParamLists): $retTy = $newBody
 
         $funImplName(...$args)
       }
@@ -182,10 +183,8 @@ private[hiddenargs] class HiddenMacros(val c: Context) {
 
   def transform(annottees: Tree*): Tree = {
     val res = annottees map {
-      case tree @ q"""
-        def $funName[..$ptys](...$params): $retTy = $funBody
-        """ =>
-        changeFunction(tree, funName, ptys, params, retTy, funBody)
+      case tree @ q"$mods def $funName[..$ptys](...$params): $retTy = $funBody" =>
+        changeFunction(tree, mods, funName, ptys, params, retTy, funBody)
       case t =>
         c.error(t.pos, "Unsupported usage of annotation 'hiddenargs'!")
         t
