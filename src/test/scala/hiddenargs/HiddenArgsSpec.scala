@@ -63,6 +63,18 @@ class HiddenArgsSpec extends FlatSpec with Matchers {
     sum(List[Short](1, 2, 3)) should be (6.toShort)
     sum(List[Int](1, 2, 3))   should be (6)
     sum(List[Long](1, 2, 3))  should be (6L)
+
+    @hiddenargs
+    def sum2[T: Numeric](xs: List[T], @hidden acc: T = implicitly[Numeric[T]].zero): T =
+      xs match {
+        case Nil      => acc
+        case hd :: tl => sum2(tl, implicitly[Numeric[T]].plus(hd, acc))
+      }
+
+    sum2(List[Byte](1, 2, 3))  should be (6.toByte)
+    sum2(List[Short](1, 2, 3)) should be (6.toShort)
+    sum2(List[Int](1, 2, 3))   should be (6)
+    sum2(List[Long](1, 2, 3))  should be (6L)
   }
 
 }
