@@ -4,20 +4,13 @@ import org.scalatest._
 
 class ExampleSpec extends FlatSpec with Matchers {
 
-  "The example 'factorial'" should "be valid" in {
-    new factorial()
-  }
+  private def example(name: String, run: => Unit): Unit =
+    s"The example '$name'" should "be valid" in (run)
 
-  "The example 'sum'" should "be valid" in {
-    new sum()
-  }
-
-  "The example 'genericsum'" should "be valid" in {
-    new genericsum()
-  }
-
-  "The example 'count'" should "be valid" in {
-    new count()
-  }
+  example("count",      new count())
+  example("factorial",  new factorial())
+  example("fibonacci",  new fibonacci())
+  example("genericsum", new genericsum())
+  example("sum",        new sum())
 
 }
