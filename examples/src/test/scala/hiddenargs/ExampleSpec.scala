@@ -20,4 +20,8 @@ class ExampleSpec extends FlatSpec with Matchers {
     new count()
   }
 
+  "The example 'fibonacci'" should "be valid" in {
+    new fibonacci()
+  }
+
 }
