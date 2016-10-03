@@ -85,22 +85,48 @@ private[hiddenargs] class HiddenMacros(val c: Context) {
     case _                      => false
   }
 
+  /**
+   * Analyze parameters marked with 'hidden'.
+   *
+   * Show an error if
+   * - a 'hidden' parameter has no default value or
+   * - a 'hidden' parameter is implicit.
+   *
+   * If no error was shown, remove the flag `Flag.DEFAULTPARAM`
+   * from the parameters modifiers and the annotation 'hidden'.
+   */
+  private def hiddenParameter(tree: Tree,
+                              mods: Modifiers,
+                              name: TermName,
+                              tpe: Tree,
+                              default: Tree): Param = {
+
+    def hiddenParamError(msg: String) = {
+      c.error(tree.pos, s"Hidden function parameter '${name.decodedName.toString}' $msg!")
+      Normal(tree, name)
+    }
+    def needsDefaultValue() = hiddenParamError("needs a default value")
+    def cantBeImplicit()    = hiddenParamError("can't be implicit")
+
+    if (default.isEmpty) {
+      needsDefaultValue()
+    } else if (mods.hasFlag(Flag.IMPLICIT)) {
+      cantBeImplicit()
+    } else {
+      val noDefaultParamFlag =
+        if (mods hasFlag Flag.DEFAULTPARAM) removeFlag(mods, Flag.DEFAULTPARAM)
+        else mods
+      val noHiddenAnnotation =
+        noDefaultParamFlag.mapAnnotations(_ filterNot (isAnnotation[HiddenAnnot]))
+      Hidden(noHiddenAnnotation, name, tpe, default)
+    }
+  }
+
   private def paramInfos(fundef: Tree, plists: List[List[Tree]]): (List[List[Param]], Boolean) = {
     val paramLists = plists map {
       _ map {
         case t @ q"$mods val $name: $tpe = $default" if hasAnnotation[HiddenAnnot](mods) =>
-          if (default.isEmpty) {
-            val paramName = name.decodedName.toString
-            c.error(t.pos, s"Hidden function parameter '$paramName' needs a default value!")
-            Normal(t, name)
-          } else if (mods.hasFlag(Flag.IMPLICIT)) {
-            val paramName = name.decodedName.toString
-            c.error(t.pos, s"Hidden function parameter '$paramName' can't be implicit!")
-            Normal(t, name)
-          } else {
-            val newMods = removeFlag(mods, Flag.DEFAULTPARAM).mapAnnotations(_ filterNot (isAnnotation[HiddenAnnot]))
-            Hidden(newMods, name, tpe, default)
-          }
+          hiddenParameter(t, mods, name, tpe, default)
         case t @ q"$mods val $name: $tpe = $default" =>
           Normal(t, name)
         case p =>
