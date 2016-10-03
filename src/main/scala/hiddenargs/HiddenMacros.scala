@@ -122,6 +122,42 @@ private[hiddenargs] class HiddenMacros(val c: Context) {
     (paramLists, hasHiddenParameters)
   }
 
+  /**
+   * Remove default arguments, which were marked with 'hidden',
+   * keep every other parameter.
+   */
+  private def outerParameterLists(paramLists: List[List[Param]]): List[List[Tree]] =
+    paramLists map {
+      _ collect {
+        case Normal(p, _) => p
+      }
+    }
+
+  /**
+   * Drop default values of parameters, which were marked with 'hidden',
+   * keep every other parameter.
+   */
+  private def innerParameterLists(paramLists: List[List[Param]]): List[List[Tree]] =
+    paramLists map {
+      _ map {
+        case Hidden(mods, name, tpe, default) =>
+          q"$mods val $name: $tpe = $EmptyTree"
+        case Normal(p, _) => p
+      }
+    }
+
+  /**
+   * Pass default value of hidden parameters and
+   * propagate other parameters to inner function.
+   */
+  private def argumentsForInnerFunction(paramLists: List[List[Param]]): List[List[Tree]] =
+    paramLists map {
+      _ collect {
+        case Hidden(_, _, _, default)                   => default
+        case Normal(p, name) if !isImplicitParameter(p) => q"$name"
+      }
+    } filterNot (_.isEmpty)
+
   private def rewriteFunction(tree: Tree,
                               mods: Modifiers,
                               funName: TermName,
@@ -133,41 +169,11 @@ private[hiddenargs] class HiddenMacros(val c: Context) {
     val (paramLists, shouldTransform) = paramInfos(tree, params)
 
     if (shouldTransform) {
-      val funImplName = TermName(funName.decodedName.toString() + "_impl")
-      val newBody = replaceCall(funBody, funName, funImplName)
-
-      /*
-       * Drop default arguments, which were marked
-       * with 'hidden'.
-       */
-      val outerParamLists = paramLists map {
-        _ collect {
-          case Normal(p, _) => p
-        }
-      }
-
-      /*
-       * Drop default value and 'hidden' annotation
-       * in the parameter-list of the inner function.
-       */
-      val innerParamLists = paramLists map {
-        _ map {
-          case Hidden(mods, name, tpe, default) =>
-            q"$mods val $name: $tpe = $EmptyTree"
-          case Normal(p, _) => p
-        }
-      }
-
-      /*
-       * Pass default value of hidden parameters and
-       * propagate other parameters to inner function.
-       */
-      val args = paramLists map {
-        _ collect {
-          case Hidden(_, _, _, default)                   => default
-          case Normal(p, name) if !isImplicitParameter(p) => q"$name"
-        }
-      } filterNot (_.isEmpty)
+      val funImplName     = TermName(funName.decodedName.toString() + "_impl")
+      val newBody         = replaceCall(funBody, funName, funImplName)
+      val outerParamLists = outerParameterLists(paramLists)
+      val innerParamLists = innerParameterLists(paramLists)
+      val args            = argumentsForInnerFunction(paramLists)
 
       q"""
       def $funName[..$ptys](...$outerParamLists): $retTy = {
