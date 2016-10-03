@@ -98,7 +98,7 @@ private[hiddenargs] class HiddenMacros(val c: Context) {
             c.error(t.pos, s"Hidden function parameter '$paramName' can't be implicit!")
             Normal(t, name)
           } else {
-            val newMods = removeFlag(mods, Flag.DEFAULTPARAM).mapAnnotations(_  filterNot (isAnnotation[HiddenAnnot]))
+            val newMods = removeFlag(mods, Flag.DEFAULTPARAM).mapAnnotations(_ filterNot (isAnnotation[HiddenAnnot]))
             Hidden(newMods, name, tpe, default)
           }
         case t @ q"$mods val $name: $tpe = $default" =>
@@ -122,13 +122,13 @@ private[hiddenargs] class HiddenMacros(val c: Context) {
     (paramLists, hasHiddenParameters)
   }
 
-  private def changeFunction(tree: Tree,
-                             mods: Modifiers,
-                             funName: TermName,
-                             ptys: List[TypeDef],
-                             params: List[List[ValDef]],
-                             retTy: Tree,
-                             funBody: Tree): Tree = {
+  private def rewriteFunction(tree: Tree,
+                              mods: Modifiers,
+                              funName: TermName,
+                              ptys: List[TypeDef],
+                              params: List[List[ValDef]],
+                              retTy: Tree,
+                              funBody: Tree): Tree = {
 
     val (paramLists, shouldTransform) = paramInfos(tree, params)
 
@@ -184,7 +184,7 @@ private[hiddenargs] class HiddenMacros(val c: Context) {
   def transform(annottees: Tree*): Tree = {
     val res = annottees map {
       case tree @ q"$mods def $funName[..$ptys](...$params): $retTy = $funBody" =>
-        changeFunction(tree, mods, funName, ptys, params, retTy, funBody)
+        rewriteFunction(tree, mods, funName, ptys, params, retTy, funBody)
       case t =>
         c.error(t.pos, "Unsupported use of annotation 'hiddenargs'!")
         t
