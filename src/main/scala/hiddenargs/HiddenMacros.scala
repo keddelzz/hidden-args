@@ -7,6 +7,37 @@ import java.io.Serializable
 private[hiddenargs] class HiddenMacros(val c: Context) {
   import c.universe._
 
+  private val flagValues = Seq(
+    Flag.TRAIT,
+    Flag.INTERFACE,
+    Flag.MUTABLE,
+    Flag.MACRO,
+    Flag.DEFERRED,
+    Flag.ABSTRACT,
+    Flag.FINAL,
+    Flag.SEALED,
+    Flag.IMPLICIT,
+    Flag.LAZY,
+    Flag.OVERRIDE,
+    Flag.PRIVATE,
+    Flag.PROTECTED,
+    Flag.LOCAL,
+    Flag.CASE,
+    Flag.ABSOVERRIDE,
+    Flag.BYNAMEPARAM,
+    Flag.PARAM,
+    Flag.COVARIANT,
+    Flag.CONTRAVARIANT,
+    Flag.DEFAULTPARAM,
+    Flag.PRESUPER,
+    Flag.DEFAULTINIT,
+    Flag.ENUM,
+    Flag.PARAMACCESSOR,
+    Flag.CASEACCESSOR,
+    Flag.SYNTHETIC,
+    Flag.ARTIFACT,
+    Flag.STABLE)
+
   private def replaceCall(body: Tree, orig: TermName, replacement: TermName): Tree = {
     val transformer = new Transformer {
       override def transform(tree: Tree): Tree =
@@ -18,44 +49,13 @@ private[hiddenargs] class HiddenMacros(val c: Context) {
     transformer.transform(body)
   }
 
-  private def transformMods(mods: Modifiers): Modifiers = {
-    val flagValues = Seq(
-      Flag.TRAIT,
-      Flag.INTERFACE,
-      Flag.MUTABLE,
-      Flag.MACRO,
-      Flag.DEFERRED,
-      Flag.ABSTRACT,
-      Flag.FINAL,
-      Flag.SEALED,
-      Flag.IMPLICIT,
-      Flag.LAZY,
-      Flag.OVERRIDE,
-      Flag.PRIVATE,
-      Flag.PROTECTED,
-      Flag.LOCAL,
-      Flag.CASE,
-      Flag.ABSOVERRIDE,
-      Flag.BYNAMEPARAM,
-      Flag.PARAM,
-      Flag.COVARIANT,
-      Flag.CONTRAVARIANT,
-      Flag.DEFAULTPARAM,
-      Flag.PRESUPER,
-      Flag.DEFAULTINIT,
-      Flag.ENUM,
-      Flag.PARAMACCESSOR,
-      Flag.CASEACCESSOR,
-      Flag.SYNTHETIC,
-      Flag.ARTIFACT,
-      Flag.STABLE)
-
-    /*
-     * Rebuild 'oldFlags', but don't add flag 'DEFAULTPARAM'
-     */
+  /**
+   * Rebuild `mods`, but exclude flag `remove`
+   */
+  private def removeFlag(mods: Modifiers, remove: FlagSet): Modifiers = {
     var flags = NoFlags
     for (flag <- flagValues) {
-      if ((mods hasFlag flag) && flag != Flag.DEFAULTPARAM) {
+      if ((mods hasFlag flag) && flag != remove) {
         flags |= flag
       }
     }
@@ -63,7 +63,7 @@ private[hiddenargs] class HiddenMacros(val c: Context) {
     Modifiers(
       flags,
       mods.privateWithin,
-      mods.annotations filterNot (isAnnotation[HiddenAnnot]))
+      mods.annotations)
   }
 
   private type HiddenAnnot = hiddenargs.hidden
@@ -98,7 +98,7 @@ private[hiddenargs] class HiddenMacros(val c: Context) {
             c.error(t.pos, s"Hidden function parameter '$paramName' can't be implicit!")
             Normal(t, name)
           } else {
-            val newMods = transformMods(mods)
+            val newMods = removeFlag(mods, Flag.DEFAULTPARAM).mapAnnotations(_  filterNot (isAnnotation[HiddenAnnot]))
             Hidden(newMods, name, tpe, default)
           }
         case t @ q"$mods val $name: $tpe = $default" =>
