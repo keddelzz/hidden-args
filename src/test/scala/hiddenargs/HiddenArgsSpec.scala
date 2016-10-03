@@ -104,4 +104,25 @@ class HiddenArgsSpec extends FlatSpec with Matchers {
      */
   }
 
+  "Classes" should "not be markable with 'hiddenargs'" in {
+    illTyped("""
+      @hiddenargs
+      class A
+    """, "Unsupported use of annotation 'hiddenargs'!")
+  }
+
+  "Traits" should "not be markable with 'hiddenargs'" in {
+    illTyped("""
+      @hiddenargs
+      trait B
+    """, "Unsupported use of annotation 'hiddenargs'!")
+  }
+
+  "Type Aliases" should "not be markable with 'hiddenargs'" in {
+    illTyped("""
+      @hiddenargs
+      type C
+    """, "Unsupported use of annotation 'hiddenargs'!")
+  }
+
 }
