@@ -186,7 +186,7 @@ private[hiddenargs] class HiddenMacros(val c: Context) {
       case tree @ q"$mods def $funName[..$ptys](...$params): $retTy = $funBody" =>
         changeFunction(tree, mods, funName, ptys, params, retTy, funBody)
       case t =>
-        c.error(t.pos, "Unsupported usage of annotation 'hiddenargs'!")
+        c.error(t.pos, "Unsupported use of annotation 'hiddenargs'!")
         t
     }
 
