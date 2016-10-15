@@ -11,6 +11,7 @@ class ExampleSpec extends FlatSpec with Matchers {
   example("factorial",  new factorial())
   example("fibonacci",  new fibonacci())
   example("genericsum", new genericsum())
+  example("reverse",    new reverse())
   example("sum",        new sum())
 
 }
