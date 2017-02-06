@@ -4,8 +4,12 @@
 
 lazy val settings = Seq(
   name := "hidden-args",
+  organization := "com.github.keddelzz.hidden-args",
   version := "0.0.1-SNAPSHOT",
-  scalaVersion := "2.11.8",
+  scalaVersion := "2.12.1",
+  crossScalaVersions := Seq("2.12.1", "2.11.8"),
+  licenses += ("MIT", url("http://opensource.org/licenses/MIT")),
+  
   resolvers += Resolver.sonatypeRepo("releases"),
   addCompilerPlugin("org.scalamacros" %% "paradise" % "2.1.0" cross CrossVersion.full),
   libraryDependencies ++= Seq(
@@ -14,6 +18,8 @@ lazy val settings = Seq(
     "com.chuusai"    %% "shapeless"     % "2.3.2" 			  % "test"
   )
 )
+
+bintrayReleaseOnPublish in ThisBuild := false
 
 /*
  * ==================================== tasks =====================================
