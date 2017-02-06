@@ -5,7 +5,7 @@
 lazy val settings = Seq(
   name := "hidden-args",
   organization := "com.github.keddelzz.hidden-args",
-  version := "0.0.1",
+  version := "0.0.2-SNAPSHOT",
   scalaVersion := "2.12.1",
   crossScalaVersions := Seq("2.12.1", "2.11.8"),
   licenses += ("MIT", url("http://opensource.org/licenses/MIT")),

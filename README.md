@@ -65,12 +65,14 @@ To build the project:
 - Add dependency on Scala compiler plugin [Macro Paradise](https://github.com/scalamacros/paradise).
   - This can be done by adding `addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)` to the build settings in build.sbt.
   - An example project, which uses Macro Paradise can be found [here](https://github.com/scalamacros/sbt-example-paradise).
-- Add dependency on this repository.
-  - This can be done by adding the following line to the build.sbt file
-  ```scala
-  lazy val hiddenArgs = ProjectRef(uri("https://github.com/keddelzz/hidden-args.git"), "hiddenargs")
-  ```
-  - ... and adding a dependency to your project using `dependsOn(hiddenArgs)`.
+- Add the following resolver to your `build.sbt`:
+```
+resolvers += Resolver.bintrayRepo("keddelzz", "maven")
+```
+- Add the following dependency to your `build.sbt`:
+```
+libraryDependencies += "com.github.keddelzz.hidden-args" %% "hidden-args" % "0.0.1"
+```
 - Define tail-recursive functions, mark them with 'hiddenargs' and let the compiler hide those arguments, which are marked as 'hidden'.
 
 ## License
