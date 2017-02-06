@@ -70,15 +70,9 @@ To build the project:
 resolvers += Resolver.bintrayRepo("keddelzz", "maven")
 ```
 - Add the following dependency to your `build.sbt`:
-
-  - For Scala 2.11:
-  ```
-  libraryDependencies += "com.github.keddelzz.hidden-args" % "hidden-args_2.11" % "0.0.1"
-  ```
-  - For Scala 2.12:
-  ```
-  libraryDependencies += "com.github.keddelzz.hidden-args" % "hidden-args_2.12" % "0.0.1"
-  ```
+```
+libraryDependencies += "com.github.keddelzz.hidden-args" %% "hidden-args" % "0.0.1"
+```
 - Define tail-recursive functions, mark them with 'hiddenargs' and let the compiler hide those arguments, which are marked as 'hidden'.
 
 ## License
