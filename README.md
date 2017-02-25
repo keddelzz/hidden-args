@@ -67,7 +67,7 @@ To build the project:
   - An example project, which uses Macro Paradise can be found [here](https://github.com/scalamacros/sbt-example-paradise).
 - Add the following resolver to your `build.sbt`:
 ```
-resolvers += Resolver.bintrayRepo("keddelzz", "maven")
+resolvers += Resolver.jcenterRepo
 ```
 - Add the following dependency to your `build.sbt`:
 ```
